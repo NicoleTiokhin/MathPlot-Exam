@@ -126,7 +126,8 @@ The test suite covers:
 ---
 
 ### Test Success Screenshot
-![Coverage Screenshot](/Users/nicoletiokhin/MathPlot-Exam/Screenshot 2025-12-02 at 18.04.28.png)
+(![Coverage Screenshot](Screenshot%202025-12-02%20at%2018.04.28.png)
+)
 
 ### Jacoco Results
 | Module | Coverage |
