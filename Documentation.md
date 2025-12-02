@@ -1,4 +1,4 @@
-# 📘 MathPlot — Documentation
+# MathPlot — Documentation
 
 ### Advanced Software Engineering Exam  
 **Student:** _Your Name_  
