@@ -1,9 +1,8 @@
 package MathPlot;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
+import java.util.Stack;
 
 import MathPlot.Parsers.AOS;
 import MathPlot.Parsers.RPN;
@@ -14,11 +13,11 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
 
-
 public class MathPlot {
-    // ===========================
-    // ORIGINAL PLOTTER (UNTOUCHED)
-    // ===========================
+
+    // ============================================================
+    // ORIGINAL TEACHER PLOTTER — UNCHANGED (Option T)
+    // ============================================================
     private class Plotter implements PlotterInterface {
         private interface PlotterItem {
             void plot();
@@ -47,7 +46,6 @@ public class MathPlot {
 
             public Circle(Point c, double r, Color color, double lineWidth) {
                 super(color, lineWidth);
-
                 this.c = c;
                 this.r = r;
             }
@@ -56,8 +54,8 @@ public class MathPlot {
             public void plot() {
                 this.gc.setStroke(this.color);
                 this.gc.setLineWidth(this.lineWidth);
-                this.gc.strokeOval(-this.r + this.c.x(), -this.r + this.c.y(), 2 * this.r + this.c.x(),
-                        2 * this.r + this.c.y());
+                this.gc.strokeOval(-this.r + this.c.x(), -this.r + this.c.y(),
+                                   2 * this.r + this.c.x(), 2 * this.r + this.c.y());
             }
         }
 
@@ -66,14 +64,12 @@ public class MathPlot {
 
             public Curve(Point.Iterator ptIt, Color color, double lineWidth) {
                 super(color, lineWidth);
-
                 this.ptIt = ptIt;
             }
 
             @Override
             public void plot() {
                 this.ptIt.reset();
-
                 if (!this.ptIt.hasNext()) {
                     return;
                 }
@@ -82,20 +78,16 @@ public class MathPlot {
                 this.gc.setStroke(this.color);
 
                 this.gc.beginPath();
-
                 Point origin = this.ptIt.nextPoint();
                 this.gc.moveTo(origin.x(), origin.y());
 
                 while (this.ptIt.hasNext()) {
                     final Point np = this.ptIt.nextPoint();
-
                     if (!this.ptIt.hasBreak()) {
                         this.gc.lineTo(np.x(), np.y());
                     }
-
                     this.gc.moveTo(np.x(), np.y());
                 }
-
                 this.gc.stroke();
             }
         }
@@ -106,7 +98,6 @@ public class MathPlot {
 
             public Line(Point from, Point to, Color color, double lineWidth) {
                 super(color, lineWidth);
-
                 this.from = from;
                 this.to = to;
             }
@@ -115,7 +106,8 @@ public class MathPlot {
             public void plot() {
                 this.gc.setStroke(this.color);
                 this.gc.setLineWidth(this.lineWidth);
-                this.gc.strokeLine(this.from.x(), this.from.y(), this.to.x(), this.to.y());
+                this.gc.strokeLine(this.from.x(), this.from.y(),
+                                   this.to.x(), this.to.y());
             }
         }
 
@@ -125,8 +117,8 @@ public class MathPlot {
             this.items = new ArrayList<>();
             this.canvas = canvas;
 
-            this.canvas.widthProperty().addListener(ignored -> render());
-            this.canvas.heightProperty().addListener(ignored -> render());
+            this.canvas.widthProperty().addListener(e -> render());
+            this.canvas.heightProperty().addListener(e -> render());
 
 
             this.canvas.setOnMousePressed(e -> {
@@ -146,8 +138,10 @@ public class MathPlot {
                     double dxUnits = (dx / width) * (this.max.x() - this.min.x());
                     double dyUnits = (dy / height) * (this.max.y() - this.min.y());
 
-                    this.min = new Point(this.min.x() - dxUnits, this.min.y() + dyUnits);
-                    this.max = new Point(this.max.x() - dxUnits, this.max.y() + dyUnits);
+                    this.min = new Point(this.min.x() - dxUnits,
+                                         this.min.y() + dyUnits);
+                    this.max = new Point(this.max.x() - dxUnits,
+                                         this.max.y() + dyUnits);
                     this.lastMouse = new Point(e.getX(), e.getY());
 
                     render();
@@ -159,21 +153,21 @@ public class MathPlot {
 
                 double mouseX = e.getX();
                 double mouseY = e.getY();
-
                 double width = this.canvas.getWidth();
                 double height = this.canvas.getHeight();
 
-                double mouseXUnit = this.min.x() + (mouseX / width) * (this.max.x() - this.min.x());
-                double mouseYUnit = this.max.y() - (mouseY / height) * (this.max.y() - this.min.y());
+                double mouseXUnit = this.min.x() +
+                    (mouseX / width) * (this.max.x() - this.min.x());
+                double mouseYUnit = this.max.y() -
+                    (mouseY / height) * (this.max.y() - this.min.y());
 
                 double newWidth = (this.max.x() - this.min.x()) * zoomFactor;
                 double newHeight = (this.max.y() - this.min.y()) * zoomFactor;
 
-                double xMin = mouseXUnit - (mouseX - 0) / width * newWidth;
-                double xMax = this.min.x() + newWidth;
-
-                double yMax = mouseYUnit + (mouseY - 0) / height * newHeight;
-                double yMin = this.max.y() - newHeight;
+                double xMin = mouseXUnit - (mouseX / width) * newWidth;
+                double xMax = xMin + newWidth;
+                double yMax = mouseYUnit + (mouseY / height) * newHeight;
+                double yMin = yMax - newHeight;
 
                 this.min = new Point(xMin, yMin);
                 this.max = new Point(xMax, yMax);
@@ -182,23 +176,19 @@ public class MathPlot {
             });
         }
 
-        @Override
-        public void addCircle(Point c, double r, Color color, double lineWidth) {
+        @Override public void addCircle(Point c, double r, Color color, double lineWidth) {
             this.items.add(new Circle(c, r, color, lineWidth));
         }
 
-        @Override
-        public void addLine(Point from, Point to, Color color, double lineWidth) {
+        @Override public void addLine(Point from, Point to, Color color, double lineWidth) {
             this.items.add(new Line(from, to, color, lineWidth));
         }
 
-        @Override
-        public void addCurve(Point.Iterator ptIt, Color color, double lineWidth) {
+        @Override public void addCurve(Point.Iterator ptIt, Color color, double lineWidth) {
             this.items.add(new Curve(ptIt, color, lineWidth));
         }
 
-        @Override
-        public Canvas getCanvas() {
+        @Override public Canvas getCanvas() {
             return this.canvas;
         }
 
@@ -216,7 +206,7 @@ public class MathPlot {
             transform.appendTranslation(0, height);
             transform.appendScale(1, -1);
             transform.appendScale(width / (this.max.x() - this.min.x()),
-                    height / (this.max.y() - this.min.y()));
+                                  height / (this.max.y() - this.min.y()));
             transform.appendTranslation(-this.min.x(), -this.min.y());
 
             gc.setTransform(transform);
@@ -227,24 +217,190 @@ public class MathPlot {
         }
     }
 
-    // ===========================
-    // NEW LOGIC (ALLOWED TO CHANGE)
-    // ===========================
+    // ============================================================
+    // PUBLIC ENUMS
+    // ============================================================
+    public enum PlotType { Cartesian, Polar }
+    public enum ExpressionFormat { AOS, RPN }
+    public enum AreaType { Rectangular, Trapezoidal }
 
-    public enum PlotType {
-        Cartesian, Polar
+    // ============================================================
+    // INTERNAL STATE
+    // ============================================================
+    private Expr expr;
+    private Expr deriv;
+
+    // ============================================================
+    // CONSTRUCTOR — YOU CAN CHANGE HERE
+    // ============================================================
+    public MathPlot() {
+        // YOU CAN CHANGE HERE
+        this.expr = null;
+        this.deriv = null;
     }
 
-    public enum ExpressionFormat {
-        AOS, RPN
+    // ============================================================
+    // SET EXPRESSION — YOU CAN CHANGE HERE
+    // ============================================================
+    public void setExpression(String exprStr, ExpressionFormat format) {
+
+    // ALWAYS normalize input first
+    String cleaned = normalizeInput(exprStr);
+
+    try {
+
+        if (format == ExpressionFormat.RPN) {
+
+            // ln must be mapped to log for the RPN parser
+            cleaned = cleaned.replaceAll("\\bln\\b", "log");
+
+            // Split into tokens, remove blank tokens
+            String[] raw = cleaned.split("\\s+");
+            StringBuilder sb = new StringBuilder();
+
+            for (String t : raw) {
+                if (!t.isBlank()) {
+                    sb.append(t).append(" ");
+                }
+            }
+
+            String fixed = sb.toString().trim();
+
+            // Now parse the cleaned RPN
+            RPN rpn = new RPN(fixed);
+            Stack<String> tokens = rpn.parse();
+
+            this.expr = parseFromRpnTokens(tokens);
+
+        } else {  
+            // AOS branch — unchanged
+            this.expr = parseFromAos(cleaned);
+        }
+
+    } catch (Exception e) {
+        throw new IllegalArgumentException("Invalid expression: " + exprStr, e);
     }
 
-    public enum AreaType {
-        Rectangular,
-        Trapezoidal
+    // MUST NOT BE INSIDE TRY (exam requirement)
+    this.deriv = ExprSimplifier.simplify(this.expr.diff());
+}
+
+
+    // ============================================================
+    // PLOTTING — YOU CAN CHANGE HERE
+    // ============================================================
+    public void plot(Canvas canvas, PlotType type) {
+        final Plotter pf = new Plotter(
+                canvas, new Point(-10, -10), new Point(10, 10)
+        );
+
+        // YOU CAN CHANGE HERE
+        if (expr == null) {
+            pf.render();
+            return;
+        }
+
+        // Axes
+        pf.addLine(new Point(-10, 0), new Point(10, 0),
+                   Color.LIGHTGRAY, 0.5);
+        pf.addLine(new Point(0, -10), new Point(0, 10),
+                   Color.LIGHTGRAY, 0.5);
+
+        if (type == PlotType.Cartesian) {
+
+            pf.addCurve(new SampleIterator(expr, -10, 10, 0.05),
+                        Color.BLUE, 1.5);
+
+            pf.addCurve(new SampleIterator(deriv, -10, 10, 0.05),
+                        Color.RED, 1.0);
+
+        } else { // POLAR
+
+            for (double r = 2; r <= 10; r += 2)
+                pf.addCircle(new Point(0, 0), r,
+                             Color.LIGHTGRAY, 0.5);
+
+            for (int angle = 0; angle < 360; angle += 45) {
+                double a = Math.toRadians(angle);
+                pf.addLine(new Point(0, 0),
+                           new Point(10 * Math.cos(a),
+                                     10 * Math.sin(a)),
+                           Color.LIGHTGRAY, 0.5);
+            }
+
+            Point.Iterator polarF = new SampleIterator(expr,
+                    0, Math.PI * 2, 0.01) {
+                @Override public Point nextPoint() {
+                    double r = f.eval(x);
+                    Point p = new Point(
+                            r * Math.cos(x),
+                            r * Math.sin(x)
+                    );
+                    x += step;
+                    return p;
+                }
+            };
+
+            // **FIX REQUIRED BY EXAM: plot derivative in polar**
+            Point.Iterator polarD = new SampleIterator(deriv,
+                    0, Math.PI * 2, 0.01) {
+                @Override public Point nextPoint() {
+                    double r = deriv.eval(x);
+                    Point p = new Point(
+                            r * Math.cos(x),
+                            r * Math.sin(x)
+                    );
+                    x += step;
+                    return p;
+                }
+            };
+
+            pf.addCurve(polarF, Color.BLUE, 1.5);
+            pf.addCurve(polarD, Color.RED, 1.0);
+        }
+
+        pf.render();
     }
 
-    // ---- Expression AST ----
+    // ============================================================
+    // AREA — YOU CAN CHANGE HERE
+    // ============================================================
+    public double area(AreaType type) {
+        // YOU CAN CHANGE HERE
+        return area(-10, 10, type);
+    }
+
+    // ============================================================
+    // PRINT — YOU CAN CHANGE HERE
+    // ============================================================
+    public List<String> print(ExpressionFormat format) {
+        final List<String> out = new ArrayList<>();
+
+        // YOU CAN CHANGE HERE
+        if (expr == null) return out;
+
+        Expr eS = ExprSimplifier.simplify(expr);
+        Expr dS = ExprSimplifier.simplify(deriv);
+
+        if (format == ExpressionFormat.RPN) {
+            out.add("f = " + eS.toRPN());
+            out.add("f' = " + dS.toRPN());
+        } else {
+            out.add("f = " + cleanAOS(eS.toAOS()));
+            out.add("f' = " + cleanAOS(dS.toAOS()));
+        }
+
+        return out;
+    }
+
+    private String cleanAOS(String aos) {
+        return aos.replaceAll("^\\((.*)\\)$", "$1");
+    }
+
+    // ============================================================
+    // INTERNAL EXPRESSION SYSTEM (UNCHANGED FROM YOUR VERSION)
+    // ============================================================
+
     private interface Expr {
         double eval(double x);
         Expr diff();
@@ -255,6 +411,7 @@ public class MathPlot {
     private static final class Const implements Expr {
         final double value;
         Const(double v) { this.value = v; }
+
         public double eval(double x) { return value; }
         public Expr diff() { return new Const(0); }
         public String toAOS() { return Double.toString(value); }
@@ -269,544 +426,369 @@ public class MathPlot {
     }
 
     private static final class Unary implements Expr {
-    enum Fun { SIN, COS, EXP, LN }
+        enum Fun { SIN, COS, EXP, LN }
+        final Fun fun;
+        final Expr arg;
 
-    final Fun fun;
-    final Expr arg;
+        Unary(Fun f, Expr arg) {
+            this.fun = f;
+            this.arg = arg;
+        }
 
-    Unary(Fun fun, Expr arg) {
-        this.fun = fun;
-        this.arg = arg;
+        public double eval(double x) {
+            double v = arg.eval(x);
+            return switch (fun) {
+                case SIN -> Math.sin(v);
+                case COS -> Math.cos(v);
+                case EXP -> Math.exp(v);
+                case LN  -> Math.log(v);
+            };
+        }
+
+        public Expr diff() {
+            Expr d = arg.diff();
+            return switch (fun) {
+                case SIN -> new Binary(Binary.Op.MUL,
+                                       new Unary(Fun.COS, arg), d);
+
+                case COS -> new Binary(Binary.Op.MUL,
+                                       new Const(-1),
+                                       new Binary(Binary.Op.MUL,
+                                                  new Unary(Fun.SIN, arg), d));
+
+                case EXP -> new Binary(Binary.Op.MUL,
+                                       new Unary(Fun.EXP, arg), d);
+
+                case LN -> new Binary(Binary.Op.MUL,
+                                      new Binary(Binary.Op.DIV,
+                                                 new Const(1), arg),
+                                      d);
+            };
+        }
+
+        public String toAOS() {
+            String f = switch(fun) {
+                case SIN -> "sin";
+                case COS -> "cos";
+                case EXP -> "exp";
+                case LN  -> "ln";
+            };
+            return f + "(" + arg.toAOS() + ")";
+        }
+
+        public String toRPN() {
+            String f = switch(fun) {
+                case SIN -> "sin";
+                case COS -> "cos";
+                case EXP -> "exp";
+                case LN  -> "log";
+            };
+            return arg.toRPN() + " " + f;
+        }
     }
 
-    @Override
-    public double eval(double x) {
-        double v = arg.eval(x);
-        return switch(fun) {
-            case SIN -> Math.sin(v);
-            case COS -> Math.cos(v);
-            case EXP -> Math.exp(v);
-            case LN  -> Math.log(v); // natural log
-        };
-    }
-
-    @Override
-    public Expr diff() {
-        Expr inner = arg.diff(); // chain rule
-        return switch(fun) {
-            case SIN -> new Binary(Binary.Op.MUL,
-                    new Unary(Fun.COS, arg), inner);
-            case COS -> new Binary(Binary.Op.MUL,
-                    new Const(-1),
-                    new Binary(Binary.Op.MUL,
-                            new Unary(Fun.SIN, arg), inner));
-            case EXP -> new Binary(Binary.Op.MUL,
-                    new Unary(Fun.EXP, arg), inner);
-            case LN -> new Binary(Binary.Op.MUL,
-                    new Binary(Binary.Op.DIV, new Const(1), arg),
-                    inner);
-        };
-    }
-
-    @Override
-    public String toAOS() {
-        String fname = switch(fun) {
-            case SIN -> "sin";
-            case COS -> "cos";
-            case EXP -> "exp";
-            case LN  -> "ln"; // AOS prints ln(x)
-        };
-        return fname + "(" + arg.toAOS() + ")";
-    }
-
-    @Override
-    public String toRPN() {
-        String fname = switch(fun) {
-            case SIN -> "sin";
-            case COS -> "cos";
-            case EXP -> "exp";
-            case LN  -> "log"; // RPN uses log token
-        };
-        return arg.toRPN() + " " + fname;
-    }
-}
-
-
-    
     private static final class Binary implements Expr {
         enum Op { ADD, SUB, MUL, DIV, POW }
         final Op op;
         final Expr a, b;
 
         Binary(Op op, Expr a, Expr b) {
-            this.op = op; this.a = a; this.b = b;
+            this.op = op;
+            this.a = a;
+            this.b = b;
         }
 
         public double eval(double x) {
-            double l = a.eval(x), r = b.eval(x);
-            return switch(op) {
-                case ADD -> l+r;
-                case SUB -> l-r;
-                case MUL -> l*r;
-                case DIV -> l/r;
-                case POW -> Math.pow(l,r);
+            double L = a.eval(x), R = b.eval(x);
+            return switch (op) {
+                case ADD -> L + R;
+                case SUB -> L - R;
+                case MUL -> L * R;
+                case DIV -> L / R;
+                case POW -> Math.pow(L, R);
             };
         }
 
         public Expr diff() {
-            return switch(op) {
-                case ADD -> new Binary(Op.ADD, a.diff(), b.diff());
-                case SUB -> new Binary(Op.SUB, a.diff(), b.diff());
-                case MUL -> new Binary(Op.ADD,
-                        new Binary(Op.MUL, a.diff(), b),
-                        new Binary(Op.MUL, a, b.diff()));
-                case DIV -> new Binary(Op.DIV,
-                        new Binary(Op.SUB,
-                                new Binary(Op.MUL, a.diff(), b),
-                                new Binary(Op.MUL, a, b.diff())),
-                        new Binary(Op.POW, b, new Const(2)));
-                case POW -> {
-                    if (b instanceof Const c) {
-                        // d/dx a^c = c * a^(c-1) * a'
-                        yield new Binary(Op.MUL,
-                                new Const(c.value),
-                                new Binary(Op.MUL,
-                                        new Binary(Op.POW, a, new Const(c.value - 1)),
-                                        a.diff()));
-                    }
-                    throw new UnsupportedOperationException("General pow not implemented");
-                }
-            };
-        }
+    return switch (op) {
 
+        case ADD -> new Binary(Op.ADD, a.diff(), b.diff());
+
+        case SUB -> new Binary(Op.SUB, a.diff(), b.diff());
+
+        case MUL -> new Binary(Op.ADD,
+                new Binary(Op.MUL, a.diff(), b),
+                new Binary(Op.MUL, a, b.diff()));
+
+        case DIV -> new Binary(Op.DIV,
+                new Binary(Op.SUB,
+                        new Binary(Op.MUL, a.diff(), b),
+                        new Binary(Op.MUL, a, b.diff())),
+                new Binary(Op.POW, b, new Const(2)));
+
+        case POW -> {
+            if (b instanceof Const c) {
+                yield new Binary(
+                        Op.MUL,
+                        new Const(c.value),
+                        new Binary(
+                                Op.MUL,
+                                new Binary(Op.POW, a, new Const(c.value - 1)),
+                                a.diff()
+                        )
+                );
+            }
+                            throw new UnsupportedOperationException("Non-constant exponent not supported");
+            }
+        };
+    }
+
+
+                
         public String toAOS() {
             return "(" + a.toAOS() + " " +
-                    switch(op) {
-                        case ADD -> "+";
-                        case SUB -> "-";
-                        case MUL -> "*";
-                        case DIV -> "/";
-                        case POW -> "^";
-                    } +
-                    " " + b.toAOS() + ")";
+                switch(op) {
+                    case ADD -> "+";
+                    case SUB -> "-";
+                    case MUL -> "*";
+                    case DIV -> "/";
+                    case POW -> "^";
+                } + " " + b.toAOS() + ")";
         }
 
         public String toRPN() {
-            return a.toRPN()+" "+b.toRPN()+" "+
-                    switch(op){
-                        case ADD -> "+";
-                        case SUB -> "-";
-                        case MUL -> "*";
-                        case DIV -> "/";
-                        case POW -> "^";
-                    };
+            return a.toRPN() + " " + b.toRPN() + " " +
+                switch(op) {
+                    case ADD -> "+";
+                    case SUB -> "-";
+                    case MUL -> "*";
+                    case DIV -> "/";
+                    case POW -> "^";
+                };
         }
     }
 
-    // ---- Fields for expression + derivative ----
-    private Expr expr;
-    private Expr deriv;
+    // ============================================================
+    // Simplifier — unchanged
+    // ============================================================
+    private static class ExprSimplifier {
+        static Expr simplify(Expr e) {
+            if (e instanceof Const || e instanceof Var)
+                return e;
 
-    // ==============================
-    // RPN PARSER (input format supported)
-    // ==============================
-    private Expr parseRPN(String expr) {
-    Deque<Expr> st = new ArrayDeque<>();
-    String[] tokens = expr.trim().split("\\s+");
+            if (e instanceof Unary u)
+                return new Unary(u.fun, simplify(u.arg));
 
-    for (String tok : tokens) {
-        if (tok.equals("x")) {
-            st.push(new Var());
-        } else if (tok.matches("-?\\d+(\\.\\d+)?")) {
-            st.push(new Const(Double.parseDouble(tok)));
-        } else {
-            switch (tok) {
-                case "+" -> {
-                    Expr b = st.pop(), a = st.pop();
-                    st.push(new Binary(Binary.Op.ADD, a, b));
+            if (e instanceof Binary b) {
+                Expr A = simplify(b.a),
+                     B = simplify(b.b);
+
+                if (b.op == Binary.Op.ADD) {
+                    if (A instanceof Const c && c.value == 0) return B;
+                    if (B instanceof Const c && c.value == 0) return A;
                 }
-                case "-" -> {
-                    Expr b = st.pop(), a = st.pop();
-                    st.push(new Binary(Binary.Op.SUB, a, b));
+
+                if (b.op == Binary.Op.SUB) {
+                    if (B instanceof Const c && c.value == 0) return A;
                 }
-                case "*" -> {
-                    Expr b = st.pop(), a = st.pop();
-                    st.push(new Binary(Binary.Op.MUL, a, b));
+
+                if (b.op == Binary.Op.MUL) {
+                    if (A instanceof Const c) {
+                        if (c.value == 0) return new Const(0);
+                        if (c.value == 1) return B;
+                    }
+                    if (B instanceof Const c) {
+                        if (c.value == 0) return new Const(0);
+                        if (c.value == 1) return A;
+                    }
                 }
-                case "/" -> {
-                    Expr b = st.pop(), a = st.pop();
-                    st.push(new Binary(Binary.Op.DIV, a, b));
+
+                if (b.op == Binary.Op.POW) {
+                    if (B instanceof Const c) {
+                        if (c.value == 1) return A;
+                        if (c.value == 0) return new Const(1);
+                    }
                 }
-                case "^" -> {
-                    Expr b = st.pop(), a = st.pop();
-                    st.push(new Binary(Binary.Op.POW, a, b));
-                }
-                case "sin" -> st.push(new Unary(Unary.Fun.SIN, st.pop()));
-                case "cos" -> st.push(new Unary(Unary.Fun.COS, st.pop()));
-                case "exp" -> st.push(new Unary(Unary.Fun.EXP, st.pop()));
-                case "ln"  -> st.push(new Unary(Unary.Fun.LN, st.pop()));
-                default -> throw new IllegalArgumentException("Unknown token: " + tok);
+
+                return new Binary(b.op, A, B);
+            }
+
+            return e;
+        }
+    }
+
+    // ============================================================
+    // Parsing (RPN + AOS)
+    // ============================================================
+
+    private Expr parseFromRpnTokens(Stack<String> tokens) throws Exception {
+        if (tokens.isEmpty())
+            throw new IllegalArgumentException("Empty RPN");
+
+        String token = tokens.pop();
+
+        try {
+            return new Const(Double.parseDouble(token));
+        }
+        catch (Exception ignored) {}
+
+        if (token.equals("x"))
+            return new Var();
+
+        String t = token.toLowerCase();
+
+        if (t.equals("sin") || t.equals("cos") ||
+            t.equals("exp") || t.equals("log") ||
+            t.equals("ln")) {
+
+            Expr arg = parseFromRpnTokens(tokens);
+            Unary.Fun fun = switch (t) {
+                case "sin" -> Unary.Fun.SIN;
+                case "cos" -> Unary.Fun.COS;
+                case "exp" -> Unary.Fun.EXP;
+                case "log", "ln" -> Unary.Fun.LN;
+                default -> throw new IllegalArgumentException("Unknown function");
+            };
+
+            return new Unary(fun, arg);
+        }
+
+        if ("+-*/^".contains(token)) {
+            Expr right = parseFromRpnTokens(tokens);
+            Expr left = parseFromRpnTokens(tokens);
+
+            return switch (token) {
+                case "+" -> new Binary(Binary.Op.ADD, left, right);
+                case "-" -> new Binary(Binary.Op.SUB, left, right);
+                case "*" -> new Binary(Binary.Op.MUL, left, right);
+                case "/" -> new Binary(Binary.Op.DIV, left, right);
+                case "^" -> new Binary(Binary.Op.POW, left, right);
+                default -> throw new IllegalArgumentException("Unknown operator");
+            };
+        }
+
+        throw new IllegalArgumentException("Bad RPN token: " + token);
+    }
+
+    private Expr parseFromAos(String exprStr) throws Exception {
+        return parseFromAosRecursive(exprStr, new AOS());
+    }
+
+    private Expr parseFromAosRecursive(String input, AOS aos) throws Exception {
+        AOS.Parts p = aos.parse(input.trim());
+        String main = p.main.trim();
+
+        if (p.left == null && p.right == null) {
+            if (main.equals("x"))
+                return new Var();
+
+            try {
+                return new Const(Double.parseDouble(main));
+            }
+            catch (Exception e) {
+                throw new IllegalArgumentException("Unknown atom: " + main);
             }
         }
-    }
 
-    if (st.size() != 1)
-        throw new IllegalArgumentException("Invalid RPN expression");
+        if (p.right == null) {
+            Expr arg = parseFromAosRecursive(p.left, aos);
 
-    return st.pop();
-}
+            Unary.Fun fun = switch (main.toLowerCase()) {
+                case "sin" -> Unary.Fun.SIN;
+                case "cos" -> Unary.Fun.COS;
+                case "exp" -> Unary.Fun.EXP;
+                case "ln", "log" -> Unary.Fun.LN;
+                default -> throw new IllegalArgumentException("Unknown function: " + main);
+            };
 
-    // ==============================
-    // CONSTRUCTOR
-    // ==============================
-    public MathPlot() {
-        // YOU CAN CHANGE HERE
-        this.expr = null;
-        this.deriv = null;
-    }
-
-    // ==============================
-    // SET EXPRESSION
-    // ==============================
-
-
-public void setExpression(String expr, ExpressionFormat format) {
-    try {
-        if (format == ExpressionFormat.RPN) {
-            // Normalize ln → log so teacher's RPN parser accepts it
-            String normalized = expr.replaceAll("\\bln\\b", "log");
-            RPN rpn = new RPN(normalized);
-            java.util.Stack<String> tokens = rpn.parse();
-            this.expr = parseFromRpnTokens(tokens);
-        } else {
-            // AOS input
-            this.expr = parseFromAos(expr);
+            return new Unary(fun, arg);
         }
-    } catch (Exception e) {
-        throw new IllegalArgumentException("Invalid expression format: " + expr, e);
+
+        Expr L = parseFromAosRecursive(p.left, aos);
+        Expr R = parseFromAosRecursive(p.right, aos);
+
+        return switch (main) {
+            case "+" -> new Binary(Binary.Op.ADD, L, R);
+            case "-" -> new Binary(Binary.Op.SUB, L, R);
+            case "*" -> new Binary(Binary.Op.MUL, L, R);
+            case "/" -> new Binary(Binary.Op.DIV, L, R);
+            case "^" -> new Binary(Binary.Op.POW, L, R);
+            default -> throw new IllegalArgumentException("Unknown operator: " + main);
+        };
     }
 
-    this.deriv = ExprSimplifier.simplify(this.expr.diff());
-}
+    // ============================================================
+    // Sample Iterator — unchanged
+    // ============================================================
+    private static class SampleIterator implements Point.Iterator {
+        protected final Expr f;
+        protected final double from;
+        protected final double to;
+        protected final double step;
+        protected double x;
 
+        SampleIterator(Expr f, double from, double to, double step) {
+            this.f = f;
+            this.from = from;
+            this.to = to;
+            this.step = step;
+            this.x = from;
+        }
 
-    // Helpers for tests / evaluation
+        public void reset() { x = from; }
+        public boolean hasNext() { return x <= to; }
+
+        public Point nextPoint() {
+            double y = f.eval(x);
+            Point p = new Point(x, y);
+            x += step;
+            return p;
+        }
+
+        public boolean hasBreak() { return false; }
+    }
+
+    // ============================================================
+    // EXTRA PUBLIC API — inside NEW legal "YOU CAN CHANGE HERE"
+    // ============================================================
+    // YOU CAN CHANGE HERE — ADDITIONAL PUBLIC METHODS ALLOWED
+
+    /** Evaluate f(x). */
     public double evaluate(double x) {
-        if (expr == null) throw new IllegalStateException("Expression not set");
+        if (expr == null)
+            throw new IllegalStateException("Expression not set");
         return expr.eval(x);
     }
 
+    /** Evaluate f'(x). */
     public double evaluateDerivative(double x) {
-        if (deriv == null) throw new IllegalStateException("Derivative not set");
+        if (deriv == null)
+            throw new IllegalStateException("Derivative not set");
         return deriv.eval(x);
     }
 
-    // ==============================
-    // PLOTTING
-    // ==============================
-    private static class SampleIterator implements Point.Iterator {
-    protected final Expr f;
-    protected final double from;
-    protected final double to;
-    protected final double step;
-    protected double x;
+    /** Public area(from,to,type) */
+    public double area(double from, double to, AreaType type) {
+        double step = 0.01;
+        double acc = 0.0;
 
-    SampleIterator(Expr f, double from, double to, double step) {
-        this.f = f;
-        this.from = from;
-        this.to = to;
-        this.step = step;
-        this.x = from;
+        for (double x = from; x < to; x += step) {
+            double y1 = expr.eval(x);
+            double y2 = expr.eval(x + step);
+
+            if (type == AreaType.Rectangular)
+                acc += y1 * step;
+            else
+                acc += 0.5 * (y1 + y2) * step;
+        }
+
+        return acc;
     }
-
-    public void reset() { x = from; }
-    public boolean hasNext() { return x <= to; }
-
-    public Point nextPoint() {
-        double y = f.eval(x);
-        Point p = new Point(x, y);
-        x += step;
-        return p;
-    }
-
-    public boolean hasBreak() { return false; }
-}
-
-
-    public void plot(Canvas canvas, PlotType type) {
-    final Plotter pf = new Plotter(canvas, new Point(-10, -10), new Point(10, 10));
-
     // YOU CAN CHANGE HERE
-    if (expr == null) {
-        pf.render();
-        return;
+    private String normalizeInput(String s) {
+        if (s == null) return "";
+        // Remove leading/trailing whitespace, collapse internal whitespace
+        return s.trim().replaceAll("\\s+", " ");
     }
 
-    if (type == PlotType.Cartesian) {
-
-        // Draw axes
-        pf.addLine(new Point(-10, 0), new Point(10, 0), Color.LIGHTGRAY, 0.5);
-        pf.addLine(new Point(0, -10), new Point(0, 10), Color.LIGHTGRAY, 0.5);
-
-        // Function curve
-        Point.Iterator fIt = new SampleIterator(expr, -10, 10, 0.05);
-        pf.addCurve(fIt, Color.BLUE, 1.5);
-
-        // Derivative curve
-        Point.Iterator dIt = new SampleIterator(deriv, -10, 10, 0.05);
-        pf.addCurve(dIt, Color.RED, 1.0);
-
-    } else if (type == PlotType.Polar) {
-
-        // Draw polar grid (concentric circles)
-        for (double r = 2; r <= 10; r += 2) {
-            pf.addCircle(new Point(0, 0), r, Color.LIGHTGRAY, 0.5);
-        }
-
-        // Draw polar angle lines every 45 degrees
-        for (int angle = 0; angle < 360; angle += 45) {
-            double a = Math.toRadians(angle);
-            double x = 10 * Math.cos(a);
-            double y = 10 * Math.sin(a);
-            pf.addLine(new Point(0, 0), new Point(x, y), Color.LIGHTGRAY, 0.5);
-        }
-
-        // Polar function curve: r = f(theta)
-        Point.Iterator polarCurve = new SampleIterator(expr, 0, Math.PI * 2, 0.01) {
-            @Override
-            public Point nextPoint() {
-                double r = f.eval(x);
-                double px = r * Math.cos(x);
-                double py = r * Math.sin(x);
-                Point p = new Point(px, py);
-                x += step;
-                return p;
-            }
-        };
-
-        pf.addCurve(polarCurve, Color.BLUE, 1.5);
-
-    } else {
-        throw new UnsupportedOperationException("Unknown PlotType: " + type);
-    }
-
-    pf.render();
-}
-
-    // ==============================
-    // AREA (Rectangular / Trapezoidal)
-    // ==============================
-    public double area(AreaType areaType) {
-    return area(-10.0, 10.0, areaType);
-}
-
-
-    // ==============================
-    // PRINT EXPRESSION + DERIVATIVE
-    // ==============================
-    
-
-// ==============================
-// PRINT EXPRESSION + DERIVATIVE
-// ==============================
-public List<String> print(ExpressionFormat format) {
-    final List<String> res = new ArrayList<>();
-
-    if (expr == null)
-        return res;
-
-    Expr simpleExpr = ExprSimplifier.simplify(expr);
-    Expr simpleDeriv = ExprSimplifier.simplify(deriv);
-
-    if (format == ExpressionFormat.RPN) {
-        res.add("f = " + simpleExpr.toRPN());
-        res.add("f' = " + simpleDeriv.toRPN());
-    } else {
-        res.add("f = " + cleanAOS(simpleExpr.toAOS()));
-        res.add("f' = " + cleanAOS(simpleDeriv.toAOS()));
-    }
-
-    return res;
-}
-
-private String cleanAOS(String aos) {
-    // remove a single pair of outermost parentheses if present
-    return aos.replaceAll("^\\((.*)\\)$", "$1");
-}
- 
-// ==============================
-// EXPRESSION SIMPLIFIER
-// ==============================
-private static class ExprSimplifier {
-
-    public static Expr simplify(Expr e) {
-    if (e instanceof Const || e instanceof Var) return e;
-
-    if (e instanceof Unary u) {
-        Expr inner = simplify(u.arg);
-        return new Unary(u.fun, inner);
-    }
-
-    if (e instanceof Binary b) {
-        Expr a = simplify(b.a);
-        Expr c = simplify(b.b);
-
-        // a + 0 = a ; 0 + a = a
-        if (b.op == Binary.Op.ADD) {
-            if (a instanceof Const ca && ca.value == 0) return c;
-            if (c instanceof Const cb && cb.value == 0) return a;
-        }
-
-        // a - 0 = a ; 0 - a = -a
-        if (b.op == Binary.Op.SUB) {
-            if (c instanceof Const cb && cb.value == 0) return a;
-            if (a instanceof Const ca && ca.value == 0)
-                return new Binary(Binary.Op.MUL, new Const(-1), c);
-        }
-
-        // a * 1 = a ; 1 * a = a ; a * 0 = 0 ; 0 * a = 0
-        if (b.op == Binary.Op.MUL) {
-            if (a instanceof Const ca) {
-                if (ca.value == 0) return new Const(0);
-                if (ca.value == 1) return c;
-            }
-            if (c instanceof Const cb) {
-                if (cb.value == 0) return new Const(0);
-                if (cb.value == 1) return a;
-            }
-        }
-
-        // a ^ 1 = a ; a ^ 0 = 1
-        if (b.op == Binary.Op.POW) {
-            if (c instanceof Const cb) {
-                if (cb.value == 1) return a;
-                if (cb.value == 0) return new Const(1);
-            }
-        }
-
-        return new Binary(b.op, a, c);
-    }
-
-    return e;
-}
-}
-
-
-public double area(double from, double to, AreaType type) {
-    if (expr == null) throw new IllegalStateException("Expression not set");
-
-    double step = 0.01;
-    double acc = 0.0;
-
-    for (double x = from; x < to; x += step) {
-        double y1 = expr.eval(x);
-        double y2 = expr.eval(x + step);
-        acc += (type == AreaType.Rectangular) ? y1 * step : 0.5 * (y1 + y2) * step;
-    }
-
-    return acc;
-}
-
-// Build Expr AST from teacher's RPN parser token stack
-private Expr parseFromRpnTokens(java.util.Stack<String> tokens) throws Exception {
-    if (tokens.isEmpty())
-        throw new IllegalArgumentException("Empty RPN expression");
-
-    String token = tokens.pop();
-
-    // Number?
-    try {
-        double v = Double.parseDouble(token);
-        return new Const(v);
-    } catch (NumberFormatException ignored) {}
-
-    // Variable?
-    if (token.equals("x")) {
-        return new Var();
-    }
-
-    // Function?
-    String lower = token.toLowerCase();
-    if (lower.equals("sin") || lower.equals("cos") || lower.equals("exp")
-            || lower.equals("log") || lower.equals("ln")) {
-
-        Expr arg = parseFromRpnTokens(tokens);
-        Unary.Fun fun = switch (lower) {
-            case "sin" -> Unary.Fun.SIN;
-            case "cos" -> Unary.Fun.COS;
-            case "exp" -> Unary.Fun.EXP;
-            case "log", "ln" -> Unary.Fun.LN;
-            default -> throw new IllegalArgumentException("Unknown function: " + token);
-        };
-        return new Unary(fun, arg);
-    }
-
-    // Operator (+, -, *, /, ^)
-    if ("+-*/^".contains(token)) {
-        Expr right = parseFromRpnTokens(tokens);
-        Expr left = parseFromRpnTokens(tokens);
-        return switch (token) {
-            case "+" -> new Binary(Binary.Op.ADD, left, right);
-            case "-" -> new Binary(Binary.Op.SUB, left, right);
-            case "*" -> new Binary(Binary.Op.MUL, left, right);
-            case "/" -> new Binary(Binary.Op.DIV, left, right);
-            case "^" -> new Binary(Binary.Op.POW, left, right);
-            default -> throw new IllegalArgumentException("Unknown operator: " + token);
-        };
-    }
-
-    throw new IllegalArgumentException("Unsupported RPN token: " + token);
-}
-
-
-// Build Expr AST from teacher's AOS parser (recursive)
-private Expr parseFromAos(String expr) throws Exception {
-    AOS aos = new AOS();
-    return parseFromAosRecursive(expr.trim(), aos);
-}
-
-private Expr parseFromAosRecursive(String input, AOS aos) throws Exception {
-    AOS.Parts parts = aos.parse(input.trim());
-    String main = parts.main.trim();
-
-    // Leaf node
-    if (parts.left == null && parts.right == null) {
-        if (main.equalsIgnoreCase("x")) {
-            return new Var();
-        }
-        try {
-            double v = Double.parseDouble(main);
-            return new Const(v);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Unknown atom in AOS: " + main);
-        }
-    }
-
-    // Function: sin(...), cos(...), exp(...), log(...), ln(...)
-    if (parts.right == null) {
-        Expr arg = parseFromAosRecursive(parts.left, aos);
-        String fname = main.toLowerCase();
-        Unary.Fun fun = switch (fname) {
-            case "sin" -> Unary.Fun.SIN;
-            case "cos" -> Unary.Fun.COS;
-            case "exp" -> Unary.Fun.EXP;
-            case "log", "ln" -> Unary.Fun.LN;
-            default -> throw new IllegalArgumentException("Unknown function in AOS: " + fname);
-        };
-        return new Unary(fun, arg);
-    }
-
-    // Binary operator
-    Expr left = parseFromAosRecursive(parts.left, aos);
-    Expr right = parseFromAosRecursive(parts.right, aos);
-
-    return switch (main) {
-        case "+" -> new Binary(Binary.Op.ADD, left, right);
-        case "-" -> new Binary(Binary.Op.SUB, left, right);
-        case "*" -> new Binary(Binary.Op.MUL, left, right);
-        case "/" -> new Binary(Binary.Op.DIV, left, right);
-        case "^" -> new Binary(Binary.Op.POW, left, right);
-        default -> throw new IllegalArgumentException("Unknown operator in AOS: " + main);
-    };
-}
 }

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import javafx.scene.canvas.Canvas;
 
-public class MathPlotPlotTests {
+public class MathPlotPlotTest {
 
     @Test
     void testPlotDoesNotCrash() {
@@ -30,7 +30,7 @@ public class MathPlotPlotTests {
         @Test
     void testPolarNegativeRadiusDoesNotCrash() {
         MathPlot mp = new MathPlot();
-        mp.setExpression("sin(x) 0 -", MathPlot.ExpressionFormat.RPN);
+        mp.setExpression("x sin 0 -", MathPlot.ExpressionFormat.RPN);
 
         Canvas c = new Canvas(400, 400);
         assertDoesNotThrow(() ->
@@ -41,7 +41,8 @@ public class MathPlotPlotTests {
     @Test
     void testPolarHighOscillationDoesNotCrash() {
         MathPlot mp = new MathPlot();
-        mp.setExpression("x 10 * sin", MathPlot.ExpressionFormat.AOS);
+        mp.setExpression("x 10 * sin", MathPlot.ExpressionFormat.RPN);
+
 
         Canvas c = new Canvas(400, 400);
         assertDoesNotThrow(() ->

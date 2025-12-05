@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import javafx.scene.canvas.Canvas;
 
-public class MathPlotPolarTests {
+public class MathPlotPolarTest {
 
     @Test
     void testPolarPlotSimpleDoesNotCrash() {

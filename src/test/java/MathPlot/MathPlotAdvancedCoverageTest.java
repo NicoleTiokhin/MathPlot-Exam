@@ -1,23 +1,25 @@
 package MathPlot;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import javafx.scene.canvas.Canvas;
 
 class MathPlotAdvancedCoverageTest {
 
+    // Minimal canvas for JavaFX plotter
     private static class FakeCanvas extends Canvas {
         FakeCanvas() {
-            super(400, 300); // small but non-zero size
+            super(400, 300);
         }
     }
 
+    // ─────────────────────────────────────────────
+    // BASIC PLOT EXECUTION
+    // ─────────────────────────────────────────────
     @Test
-    @DisplayName("plot() executes without crashing")
+    @DisplayName("plot() executes without crashing (Cartesian)")
     void testPlotExecution() {
         MathPlot mp = new MathPlot();
         mp.setExpression("x 2 *", MathPlot.ExpressionFormat.RPN);
@@ -29,77 +31,98 @@ class MathPlotAdvancedCoverageTest {
     }
 
     @Test
-    @DisplayName("plot() with null expr renders axes only")
+    @DisplayName("plot() with null expression draws axes only")
     void testPlotNullExpression() {
         MathPlot mp = new MathPlot();
         Canvas canvas = new FakeCanvas();
+
         assertDoesNotThrow(() ->
                 mp.plot(canvas, MathPlot.PlotType.Cartesian)
         );
     }
 
-    // ---- SampleIterator test without direct access ----
     @Test
-    @DisplayName("plot() triggers SampleIterator iteration fully")
+    @DisplayName("SampleIterator full traversal (implicit via plot)")
     void testSampleIteratorCoverage() {
         MathPlot mp = new MathPlot();
         mp.setExpression("x", MathPlot.ExpressionFormat.AOS);
 
         Canvas canvas = new FakeCanvas();
-        // If SampleIterator has a bug → plot() would crash
         assertDoesNotThrow(() ->
                 mp.plot(canvas, MathPlot.PlotType.Cartesian)
         );
     }
 
+    // ─────────────────────────────────────────────
+    // SIMPLIFICATION COVERAGE
+    // ─────────────────────────────────────────────
     @Test
-    @DisplayName("Simplify exponent 1 → base")
+    @DisplayName("Simplify exponent 1 → returns base")
     void testSimplifyPow1() {
         MathPlot mp = new MathPlot();
         mp.setExpression("(x ^ 1)", MathPlot.ExpressionFormat.AOS);
         assertEquals(7.0, mp.evaluate(7.0));
     }
 
-    @DisplayName("Area reversed interval should not crash and return 0")
-@Test
-void testAreaReversed() {
-    MathPlot mp = new MathPlot();
-    mp.setExpression("x", MathPlot.ExpressionFormat.AOS);
-    double area = mp.area(1, -1, MathPlot.AreaType.Rectangular);
-
-    assertEquals(0.0, area, 1e-9, "Reversed bounds should produce 0 area");
-}
-
-
     @Test
-    @DisplayName("RPN leftover tokens → error")
+    @DisplayName("AOS exponent zero simplifies to 1")
+    void testAosZeroExponent() {
+        MathPlot mp = new MathPlot();
+        mp.setExpression("(x ^ 0)", MathPlot.ExpressionFormat.AOS);
+        assertEquals(1.0, mp.evaluate(123.0), 1e-9);
+    }
+
+    // ─────────────────────────────────────────────
+    // AREA COVERAGE
+    // ─────────────────────────────────────────────
+    @Test
+    @DisplayName("Reversed bounds return area = 0")
+    void testAreaReversed() {
+        MathPlot mp = new MathPlot();
+        mp.setExpression("x", MathPlot.ExpressionFormat.AOS);
+
+        double area = mp.area(1, -1, MathPlot.AreaType.Rectangular);
+        assertEquals(0.0, area, 1e-9);
+    }
+
+    // ─────────────────────────────────────────────
+    // RPN VALIDATION COVERAGE
+    // ─────────────────────────────────────────────
+    @Test
+    @DisplayName("RPN leftover tokens causes exception")
     void testRpnLeftoverStack() {
         MathPlot mp = new MathPlot();
         assertThrows(IllegalArgumentException.class,
-                () -> mp.setExpression("x x + 2", MathPlot.ExpressionFormat.RPN));
+                () -> mp.setExpression("x x + 2", MathPlot.ExpressionFormat.RPN)
+        );
     }
 
+    // ─────────────────────────────────────────────
+    // AOS PARSER STRESS CASE
+    // ─────────────────────────────────────────────
     @Test
-    @DisplayName("Deep AOS parse works")
+    @DisplayName("Deep AOS parentheses parsing works")
     void testDeepAos() {
         MathPlot mp = new MathPlot();
         mp.setExpression("(((sin((x)))))", MathPlot.ExpressionFormat.AOS);
         assertEquals(0.0, mp.evaluate(0.0), 1e-9);
     }
 
-
+    // ─────────────────────────────────────────────
+    // CROSS-MODULE PLOT / PRINT COMBINATION
+    // ─────────────────────────────────────────────
     @Test
-void testPrintRpnAfterPolarPlotDoesNotCrash() {
-    MathPlot mp = new MathPlot();
-    mp.setExpression("x sin", MathPlot.ExpressionFormat.RPN);
+    @DisplayName("Polar plot + print(RPN) does not crash")
+    void testPrintRpnAfterPolarPlotDoesNotCrash() {
+        MathPlot mp = new MathPlot();
+        mp.setExpression("x sin", MathPlot.ExpressionFormat.RPN);
 
-    Canvas c = new FakeCanvas();
-    assertDoesNotThrow(() ->
-        mp.plot(c, MathPlot.PlotType.Polar)
-    );
+        Canvas c = new FakeCanvas();
+        assertDoesNotThrow(() ->
+                mp.plot(c, MathPlot.PlotType.Polar)
+        );
 
-    var out = mp.print(MathPlot.ExpressionFormat.RPN);
-    assertEquals(2, out.size());
-}
-
+        var out = mp.print(MathPlot.ExpressionFormat.RPN);
+        assertEquals(2, out.size()); // f and f'
+    }
 }
