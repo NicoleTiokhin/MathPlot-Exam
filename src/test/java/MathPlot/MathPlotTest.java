@@ -369,7 +369,6 @@ public class MathPlotTest {
         assertEquals(expected, mp.evaluateDerivative(x), 1e-6);
     }
 
-    // FIXED VERSION — check numerical derivative instead of string
     @Test
     void testDerivativeDivision() {
         MathPlot mp = new MathPlot();
@@ -391,6 +390,27 @@ public class MathPlotTest {
         double v = mp.evaluate(-1);
         assertTrue(Double.isNaN(v) || Double.isInfinite(v));
     }
+    @Test
+void testSetExpressionAOS() {
+    MathPlot mp = new MathPlot();
+    mp.setExpression("sin(x)", ExpressionFormat.AOS);
+    assertEquals(0.0, mp.evaluate(0), 1e-6);
+}
+
+@Test
+void testSetExpressionRPN() {
+    MathPlot mp = new MathPlot();
+    mp.setExpression("x sin", ExpressionFormat.RPN);
+    assertEquals(0.0, mp.evaluate(0), 1e-6);
+}
+
+@Test
+void testPrintAOS() {
+    MathPlot mp = new MathPlot();
+    mp.setExpression("x^2", ExpressionFormat.AOS);
+    assertFalse(mp.print(ExpressionFormat.AOS).isEmpty());
+}
+
 
     @Test
     void testEvaluateLargeX() {
